@@ -15,12 +15,38 @@ public class Producer {
 		String clientName = args[2];
 		String inputFileName = args[3];
 
-		// create connection to server
-		// send the string "PRODUCER" to server first
-		// read messages from input file line by line
-		// put the client name and colon in front of each message
-		// e.g., clientName:....
-		// send message until you find ".bye" in the input file
-		// close connection
+		try {
+			Socket client;
+			DataOutputStream out;
+			BufferedReader br;
+			String line;
+			
+			// create connection to server
+			client = new Socket(serverName,port);
+			
+			// send the string "PRODUCER" to server first
+			out = new DataOutputStream(client.getOutputStream());
+			out.writeUTF("PRODUCER");
+			
+			// read messages from input file line by line
+			// put the client name and colon in front of each message
+			// e.g., clientName:....
+			// send message until you find ".bye" in the input file
+			br = new BufferedReader(new FileReader(inputFileName));
+			while ((line = br.readLine()) != null) {
+				out.writeUTF(line);
+			    if(line.equals(".bye")){
+			    	break;
+			    }
+			}
+			
+			// close connection
+			br.close();
+			client.close();
+		} catch(UnknownHostException e){
+			System.err.println("Host "+serverName+" unknown");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
