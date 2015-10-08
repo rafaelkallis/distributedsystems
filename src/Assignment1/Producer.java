@@ -32,9 +32,10 @@ public class Producer {
 			// put the client name and colon in front of each message
 			// e.g., clientName:....
 			// send message until you find ".bye" in the input file
+			
 			br = new BufferedReader(new FileReader(inputFileName));
 			while ((line = br.readLine()) != null) {
-				out.writeUTF(line);
+				out.writeUTF(clientName+":"+line);
 			    if(line.equals(".bye")){
 			    	break;
 			    }

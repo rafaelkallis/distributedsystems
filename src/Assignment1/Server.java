@@ -12,14 +12,15 @@ public class Server {
 	private static int port; 
 		
 	public static LinkedList<String> messageHistory = new LinkedList<String>();
-	
 	private static ServerSocket serverSocket;
-  
+	public static boolean listening = true;
+	
 	// Listen for incoming client connections and handle them
 	public static void main(String[] args) {
 		//port number to listen to
 		port = Integer.parseInt(args[0]);
 		
+
 		// the server listens to incoming connections    
 		// this is a blocking operation
 		// which means the server listens to connections infinitely
@@ -27,37 +28,33 @@ public class Server {
 		// keep listening to further requests
 		// if you want, you can use the class HandleClient to process client requests
 		// the first message for each new client connection is either "PRODUCER" or "LISTENER"
-		while(true){
-			try{
-				//serverSocket = new ServerSocket(port);
-				//Socket server = serverSocket.accept();
-				
-				//Socket server = (new ServerSocket(port)).accept();
-				
-				//(new Thread(new HandleClient(server))).start();
-				(new Thread(new HandleClient((new ServerSocket(port)).accept()))).start();
-				
-			}catch(SocketTimeoutException e){
-				System.err.println("Socket timeout.");
-			}catch(IOException e){
-				e.printStackTrace();
-				break;
+		try{
+			serverSocket = new ServerSocket(port);
+			serverSocket.setSoTimeout(0);
+			while(listening){
+				(new Thread(new HandleClient((serverSocket.accept())))).start();
 			}
-		}  
+			serverSocket.close();
+		}catch(SocketTimeoutException e){
+			System.err.println("TIMEOUT. ");
+
+		}catch(IOException e){
+			System.err.println("IO Error. ");
+			e.printStackTrace();
+		}
 	}
 } 
 
 // you can use this class to handle incoming client requests
 // you are also free to implement your own class
-class HandleClient implements Runnable {
+class HandleClient extends Thread implements Runnable {
 	private Socket server;
 	
 	HandleClient(Socket server){
+		super();
 		this.server = server;
 	}
-	
-	public void run () {
-		
+	public synchronized void run () {
 		try{
 			DataInputStream in = new DataInputStream(this.server.getInputStream());
 			if(in.readUTF().equals("LISTENER")){
@@ -66,33 +63,27 @@ class HandleClient implements Runnable {
 
 				DataOutputStream out = new DataOutputStream(server.getOutputStream());
 				while(true){
-					
-					//get message history
-					//update message history every 100ms
-					try{
-						//SEND ALL UNREAD MESSAGES AND KEEP UPDATING
-						while(numberOfMessages != Server.messageHistory.size()){
-							String toSend = Server.messageHistory.get(numberOfMessages++);
-							out.writeUTF(toSend);
-						}
-						this.wait(100);
-					}catch(InterruptedException e){
-						// DO NOTHING
+					//SEND ALL UNREAD MESSAGES AND KEEP UPDATING
+					while(numberOfMessages != Server.messageHistory.size()){
+						String toSend = Server.messageHistory.get(numberOfMessages++);
+						System.out.println("SENDED   ["+toSend+"]");
+						out.writeUTF(toSend);
 					}
+					wait(100);
 				}
 			}else{
 				// PRODUCER
-				
-				// LISTEN TO ALL MESSAGES AND CLOSE
 				while(true){
 					String toReceive = in.readUTF();
-					if(toReceive.equals(".bye")){
+					System.out.println("RECEIVED ["+toReceive+"]");
+					if(toReceive.contains(".bye")){
 						break;
 					}
 					Server.messageHistory.add(toReceive);
-				}
-				
-			}
+				}				
+			}	
+		} catch(InterruptedException e){
+			System.err.println("INTERRUPTED");
 		}catch(IOException e){
 			e.printStackTrace();
 		}
