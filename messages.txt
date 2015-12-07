@@ -1,5 +1,0 @@
-Hello
-How are you
-I am good, thanks.
-.bye
-this message should not be printed
