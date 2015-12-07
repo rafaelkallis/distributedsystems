@@ -1,1 +1,5 @@
-/bin
+bin/
+.idea/
+.metadata/
+spark-1.5.2-bin-hadoop2.6/
+assignment3/rkalli.jar
